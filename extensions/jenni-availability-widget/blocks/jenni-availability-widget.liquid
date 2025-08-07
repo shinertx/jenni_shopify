@@ -1,0 +1,22 @@
+{% schema %}
+{
+  "name": "JENNi Availability Widget",
+  "target": "section",
+  "javascript": "widget.js",
+  "settings": [
+    {
+      "type": "text",
+      "id": "positive_text",
+      "label": "Positive copy",
+      "default": "Arrives tomorrow via JENNi!"
+    },
+    {
+      "type": "text",
+      "id": "negative_text",
+      "label": "Negative copy",
+      "default": "Not available for Next‑Day in your area."
+    }
+  ]
+}
+{% endschema %}
+<div id="jenni-widget" data-product-id="{{ product.id }}" data-product-gid="{{ product.admin_graphql_api_id }}" data-store-id="{{ shop.id }}"></div>

@@ -1,0 +1,25 @@
+import { Router } from "express";
+import bodyParser from "body-parser";
+import { shopifyConnector } from "../connectors/shopify.js";
+
+export const webhook = Router();
+
+// shopify order create
+webhook.post(
+  "/shopify/order",
+  bodyParser.raw({ type: "*/*" }),
+  async (req, res) => {
+    if (!shopifyConnector.verifyWebhook(req.body, req.get("X-Shopify-Hmac-Sha256")!)) {
+      return res.status(401).end();
+    }
+    const order = JSON.parse(req.body.toString("utf8"));
+    await shopifyConnector.forwardOrder(order);
+    res.status(200).end(); // immediate ack
+  }
+);
+
+// jenni status
+webhook.post("/jenni/status", express.json(), async (req, res) => {
+  await shopifyConnector.updateStatus(req.body);
+  res.status(200).end();
+});

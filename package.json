@@ -1,0 +1,29 @@
+{
+  "name": "jenni-universal",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "create:fulfillment-service": "ts-node scripts/createFulfillmentService.ts"
+  },
+  "dependencies": {
+    "@shopify/shopify-api": "^12.1.1",
+    "@shopify/app-bridge-react": "^4.2.1",
+    "@shopify/polaris": "^12.8.0",
+    "axios": "^1.7.0",
+    "bullmq": "^4.13.0",
+    "dotenv": "^16.4.0",
+    "express": "^4.19.2",
+    "ioredis": "^5.3.2",
+    "pino": "^9.2.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.30",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.3.3"
+  }
+}
