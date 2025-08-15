@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JENNi Test Store - Live Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f8f9fa;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 20px;
+        }
+
+        .status-bar {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            border-left: 4px solid #007bff;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .product-image {
+            height: 200px;
+            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+        }
+
+        .product-info {
+            padding: 1.5rem;
+        }
+
+        .product-brand {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .product-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .product-price {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #28a745;
+            margin-bottom: 1rem;
+        }
+
+        .gtin {
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #6c757d;
+            background: #f8f9fa;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .jenni-widget {
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+        }
+
+        .availability {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-icon {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .checking { 
+            background: #ffc107; 
+            animation: pulse 1.5s infinite;
+        }
+        .available { 
+            background: #28a745; 
+        }
+        .unavailable { 
+            background: #dc3545; 
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .add-to-cart {
+            width: 100%;
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .add-to-cart:hover:not(:disabled) {
+            background: #0056b3;
+        }
+
+        .add-to-cart:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .zip-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .zip-modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .zip-modal h3 {
+            margin-bottom: 1rem;
+        }
+
+        .zip-modal input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .zip-modal button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .cart {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            z-index: 99;
+        }
+
+        .debug {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-family: monospace;
+            font-size: 0.8rem;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>🛍️ JENNi Test Store</h1>
+        <p>Same Day Delivery • Real Products • Live API</p>
+    </header>
+
+    <div class="cart" onclick="toggleCart()">
+        🛒 Cart: <span id="cartCount">0</span>
+    </div>
+
+    <div class="container">
+        <div class="status-bar">
+            <h3>🔍 System Status</h3>
+            <div id="systemStatus">Initializing JENNi integration...</div>
+        </div>
+
+        <div class="products-grid" id="productsGrid">
+            <!-- Products will load here -->
+        </div>
+
+        <div class="debug">
+            <strong>🔧 Debug Console:</strong>
+            <div id="debugLog">Loading...</div>
+        </div>
+    </div>
+
+    <!-- ZIP Code Modal -->
+    <div class="zip-modal" id="zipModal" style="display: none;">
+        <div class="zip-modal-content">
+            <h3>📍 Enter Your ZIP Code</h3>
+            <p>To check same-day delivery availability</p>
+            <input type="text" id="zipInput" placeholder="e.g., 75062" maxlength="5">
+            <button onclick="setZip()">Check Availability</button>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let jenni;
+        let userZip = localStorage.getItem('userZip') || '';
+        let cart = [];
+        let debugLog = [];
+
+        // Real JENNi products
+        const products = [
+            {
+                id: 1,
+                gtin: '009328295433',
+                brand: 'Nike',
+                title: 'Dri-FIT Performance Crew Socks (Size 5-7)',
+                price: 20.00,
+                emoji: '🧦'
+            },
+            {
+                id: 2,
+                gtin: '009328295440',
+                brand: 'Nike',
+                title: 'Dri-FIT Performance Crew Socks (Size 8-12)',
+                price: 20.00,
+                emoji: '🧦'
+            },
+            {
+                id: 3,
+                gtin: '009328580522',
+                brand: 'Nike',
+                title: 'Sportswear Essential T-Shirt',
+                price: 25.00,
+                emoji: '👕'
+            }
+        ];
+
+        // Debug logging
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            debugLog.push(`[${timestamp}] ${message}`);
+            if (debugLog.length > 10) debugLog.shift();
+            document.getElementById('debugLog').textContent = debugLog.join('\n');
+            console.log(`[JENNi] ${message}`);
+        }
+
+        // Simple JENNi class for testing
+        class JENNiUniversal {
+            constructor(config = {}) {
+                this.config = {
+                    clientId: config.clientId || '111038',
+                    clientSecret: config.clientSecret || '46c3a03e-fbe0-4ae8-b74f-455f11246f91',
+                    apiHost: config.apiHost || 'http://35.209.65.82:8082',
+                    ...config
+                };
+                this.token = null;
+                this.tokenExpiry = 0;
+                this.cache = new Map();
+                log('JENNi Universal initialized');
+            }
+
+            async getAccessToken() {
+                if (this.token && Date.now() < this.tokenExpiry) {
+                    return this.token;
+                }
+
+                try {
+                    log('Getting access token...');
+                    const response = await fetch(`${this.config.apiHost}/api/sku-graph/product-availability-service/auth/token`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            client_id: this.config.clientId,
+                            client_secret: this.config.clientSecret
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Authentication failed: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    this.token = data.access_token;
+                    this.tokenExpiry = Date.now() + (data.expires_in * 1000) - 60000;
+                    
+                    log(`Token obtained: ${this.token.substring(0, 20)}...`);
+                    return this.token;
+                } catch (error) {
+                    log(`Authentication error: ${error.message}`);
+                    throw error;
+                }
+            }
+
+            async checkEligibility(gtin, zip) {
+                const cacheKey = `${gtin}:${zip}`;
+                
+                if (this.cache.has(cacheKey)) {
+                    const cached = this.cache.get(cacheKey);
+                    if (Date.now() - cached.timestamp < 600000) {
+                        log(`Cache hit for ${gtin} in ${zip}`);
+                        return cached.data;
+                    }
+                }
+
+                try {
+                    log(`Checking eligibility for ${gtin} in ${zip}...`);
+                    const token = await this.getAccessToken();
+                    
+                    const response = await fetch(`${this.config.apiHost}/api/sku-graph/product-availability-service/searchProducts/`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ gtin, page: 1, page_size: 10 })
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 404) {
+                            const result = { eligible: false, reason: 'Product not found' };
+                            this.cache.set(cacheKey, { data: result, timestamp: Date.now() });
+                            log(`Product ${gtin} not found`);
+                            return result;
+                        }
+                        throw new Error(`API error: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    
+                    let eligible = false;
+                    let inventory = 0;
+                    let productInfo = null;
+
+                    if (data.products && data.products.length > 0) {
+                        for (const product of data.products) {
+                            for (const variant of product.variants) {
+                                if (variant.gtin === gtin && variant.zipcode_inventory && variant.zipcode_inventory[zip]) {
+                                    inventory = parseInt(variant.zipcode_inventory[zip]);
+                                    if (inventory > 0) {
+                                        eligible = true;
+                                        productInfo = {
+                                            title: variant.title,
+                                            price: variant.price,
+                                            brand: product.brand
+                                        };
+                                        break;
+                                    }
+                                }
+                            }
+                            if (eligible) break;
+                        }
+                    }
+
+                    const result = {
+                        eligible,
+                        inventory,
+                        productInfo,
+                        gtin,
+                        zip,
+                        reason: eligible ? 'Available' : 'Not available in ZIP code'
+                    };
+
+                    this.cache.set(cacheKey, { data: result, timestamp: Date.now() });
+                    log(`${gtin} in ${zip}: ${eligible ? 'Available' : 'Not available'} (${inventory} stock)`);
+                    
+                    return result;
+
+                } catch (error) {
+                    log(`Error checking ${gtin}: ${error.message}`);
+                    return { eligible: false, error: error.message };
+                }
+            }
+        }
+
+        // Initialize
+        async function init() {
+            try {
+                log('Initializing application...');
+                
+                jenni = new JENNiUniversal();
+                updateSystemStatus('✅ JENNi connected successfully');
+                
+                renderProducts();
+                
+                if (userZip) {
+                    log(`Using saved ZIP: ${userZip}`);
+                    checkAllAvailability();
+                } else {
+                    setTimeout(() => {
+                        document.getElementById('zipModal').style.display = 'flex';
+                    }, 1000);
+                }
+                
+            } catch (error) {
+                log(`Initialization failed: ${error.message}`);
+                updateSystemStatus('❌ Connection failed');
+            }
+        }
+
+        function updateSystemStatus(message) {
+            document.getElementById('systemStatus').textContent = message;
+        }
+
+        function renderProducts() {
+            const grid = document.getElementById('productsGrid');
+            grid.innerHTML = products.map(product => `
+                <div class="product-card">
+                    <div class="product-image">${product.emoji}</div>
+                    <div class="product-info">
+                        <div class="product-brand">${product.brand}</div>
+                        <div class="product-title">${product.title}</div>
+                        <div class="product-price">$${product.price.toFixed(2)}</div>
+                        <div class="gtin">GTIN: ${product.gtin}</div>
+                        
+                        <div class="jenni-widget" id="widget-${product.id}">
+                            <div class="availability">
+                                <div class="status-icon checking"></div>
+                                <span>Enter ZIP to check availability</span>
+                            </div>
+                        </div>
+                        
+                        <button class="add-to-cart" id="btn-${product.id}" disabled onclick="addToCart(${product.id})">
+                            Add to Cart
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function checkAllAvailability() {
+            if (!jenni || !userZip) return;
+            
+            updateSystemStatus(`🔍 Checking availability in ${userZip}...`);
+            
+            for (const product of products) {
+                const widget = document.getElementById(`widget-${product.id}`);
+                const button = document.getElementById(`btn-${product.id}`);
+                
+                widget.innerHTML = `
+                    <div class="availability">
+                        <div class="status-icon checking"></div>
+                        <span>Checking ${userZip}...</span>
+                    </div>
+                `;
+
+                try {
+                    const result = await jenni.checkEligibility(product.gtin, userZip);
+                    
+                    if (result.eligible) {
+                        widget.innerHTML = `
+                            <div class="availability">
+                                <div class="status-icon available"></div>
+                                <strong>✅ Available for same-day delivery!</strong>
+                            </div>
+                            <div style="font-size: 0.9rem; color: #666;">
+                                ${result.inventory} in stock • Delivery to ${userZip}
+                            </div>
+                        `;
+                        button.disabled = false;
+                        button.textContent = 'Add to Cart';
+                    } else {
+                        widget.innerHTML = `
+                            <div class="availability">
+                                <div class="status-icon unavailable"></div>
+                                <span>❌ Not available in ${userZip}</span>
+                            </div>
+                            <div style="font-size: 0.9rem; color: #666;">
+                                ${result.reason}
+                            </div>
+                        `;
+                        button.disabled = true;
+                        button.textContent = 'Not Available';
+                    }
+                } catch (error) {
+                    widget.innerHTML = `
+                        <div class="availability">
+                            <div class="status-icon unavailable"></div>
+                            <span>Error checking availability</span>
+                        </div>
+                    `;
+                }
+            }
+            
+            updateSystemStatus(`✅ Availability check complete for ${userZip}`);
+        }
+
+        function setZip() {
+            const input = document.getElementById('zipInput');
+            const zip = input.value.trim();
+            
+            if (zip.length === 5 && /^\d{5}$/.test(zip)) {
+                userZip = zip;
+                localStorage.setItem('userZip', zip);
+                document.getElementById('zipModal').style.display = 'none';
+                log(`ZIP set to: ${zip}`);
+                checkAllAvailability();
+            } else {
+                alert('Please enter a valid 5-digit ZIP code');
+            }
+        }
+
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            if (product) {
+                cart.push(product);
+                document.getElementById('cartCount').textContent = cart.length;
+                log(`Added to cart: ${product.title}`);
+            }
+        }
+
+        function toggleCart() {
+            if (cart.length === 0) {
+                alert('Cart is empty!');
+                return;
+            }
+            
+            const items = cart.map(item => `• ${item.title} - $${item.price}`).join('\n');
+            alert(`Cart Items:\n\n${items}\n\nTotal: $${cart.reduce((sum, item) => sum + item.price, 0).toFixed(2)}`);
+        }
+
+        // ZIP input enter key
+        document.addEventListener('keypress', function(e) {
+            if (e.target.id === 'zipInput' && e.key === 'Enter') {
+                setZip();
+            }
+        });
+
+        // Start the app
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

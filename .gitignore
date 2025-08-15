@@ -1,0 +1,34 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Builds
+/dist
+/*.log
+logs/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Coverage / test artifacts
+coverage/
+*.tsbuildinfo
+
+# Local caches
+.cache/
+.next/
+
+# Misc
+*.tgz

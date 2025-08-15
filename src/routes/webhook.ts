@@ -1,4 +1,5 @@
 import { Router } from "express";
+import express from "express";
 import bodyParser from "body-parser";
 import { shopifyConnector } from "../connectors/shopify.js";
 
@@ -15,6 +16,20 @@ webhook.post(
     const order = JSON.parse(req.body.toString("utf8"));
     await shopifyConnector.forwardOrder(order);
     res.status(200).end(); // immediate ack
+  }
+);
+
+// shopify products sync
+webhook.post(
+  "/shopify/products",
+  bodyParser.raw({ type: "*/*" }),
+  async (req, res) => {
+    if (!shopifyConnector.verifyWebhook(req.body, req.get("X-Shopify-Hmac-Sha256")!)) {
+      return res.status(401).end();
+    }
+    const product = JSON.parse(req.body.toString("utf8"));
+    await shopifyConnector.syncProduct(product);
+    res.status(200).end();
   }
 );
 

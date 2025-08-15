@@ -1,0 +1,12 @@
+{
+  "name": "jenni-api-test",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node testJenniAPI.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "dotenv": "^16.4.0"
+  }
+}

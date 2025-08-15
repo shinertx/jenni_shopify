@@ -4,10 +4,10 @@ import { shopifyConnector } from "../connectors/shopify.js";
 export const jenni = Router();
 
 jenni.get("/eligibility", async (req, res) => {
-  const { zip, upc, storeId, productGid } = req.query as any;
+  const { zip, gtin, storeId, productGid } = req.query as any;
   try {
     const eligible = await shopifyConnector.extractEligibility(
-      { zip, upc, storeId }, { productGid }
+      { zip, gtin, storeId }, { productGid }
     );
     res.json({ eligible });
   } catch (e) {

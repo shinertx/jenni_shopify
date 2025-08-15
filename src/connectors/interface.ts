@@ -6,4 +6,5 @@ export interface Connector {
   extractEligibility(q: EligibilityQuery, platformData: any): Promise<boolean>;
   forwardOrder(order: any): Promise<JenniOrder>;
   updateStatus(jenniStatus: any): Promise<void>;
+  syncProduct?(product: any): Promise<void>;
 }

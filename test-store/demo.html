@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🛍️ JENNi Demo Store</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .header { 
+            background: linear-gradient(135deg, #007bff, #6610f2);
+            color: white; 
+            padding: 2rem; 
+            text-align: center; 
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+        .product { 
+            background: white; 
+            padding: 20px; 
+            margin: 20px 0; 
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status { 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+            border-left: 4px solid #007bff;
+            background: #e3f2fd;
+        }
+        .available { 
+            background: #d4edda; 
+            border-color: #28a745; 
+            color: #155724;
+        }
+        .unavailable { 
+            background: #f8d7da; 
+            border-color: #dc3545; 
+            color: #721c24;
+        }
+        .checking { 
+            background: #fff3cd; 
+            border-color: #ffc107; 
+            color: #856404;
+        }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 5px; 
+            cursor: pointer;
+        }
+        button:disabled { 
+            background: #6c757d; 
+            cursor: not-allowed;
+        }
+        .cart { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: #28a745; 
+            color: white; 
+            padding: 10px 15px; 
+            border-radius: 20px;
+        }
+        .debug { 
+            background: #f8f9fa; 
+            border: 1px solid #dee2e6; 
+            padding: 15px; 
+            margin: 20px 0; 
+            border-radius: 5px; 
+            font-family: monospace;
+            font-size: 12px;
+        }
+        input { 
+            padding: 10px; 
+            border: 2px solid #ddd; 
+            border-radius: 5px; 
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🛍️ JENNi Demo Store</h1>
+        <p>Same Day Delivery • Real Products • Live API Testing</p>
+    </div>
+
+    <div class="cart">🛒 Cart: <span id="cartCount">0</span></div>
+
+    <div class="status" id="systemStatus">
+        🔧 Initializing JENNi integration...
+    </div>
+
+    <div style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+        <h3>📍 Enter Your ZIP Code</h3>
+        <input type="text" id="zipInput" placeholder="e.g., 75062 for Dallas" maxlength="5">
+        <button onclick="checkAvailability()">Check Availability</button>
+        <p><strong>Try these:</strong> 75062 (Dallas - should work) or 10001 (NYC - unavailable)</p>
+    </div>
+
+    <div id="products">
+        <div class="product">
+            <h3>🧦 Nike Dri-FIT Crew Socks (Size 5-7)</h3>
+            <p><strong>Brand:</strong> Nike | <strong>Price:</strong> $20.00</p>
+            <p><strong>GTIN:</strong> 009328295433</p>
+            <div id="status-1" class="status checking">
+                ⏳ Enter ZIP code to check availability
+            </div>
+            <button id="btn-1" disabled onclick="addToCart(1)">Add to Cart</button>
+        </div>
+
+        <div class="product">
+            <h3>🧦 Nike Dri-FIT Crew Socks (Size 8-12)</h3>
+            <p><strong>Brand:</strong> Nike | <strong>Price:</strong> $20.00</p>
+            <p><strong>GTIN:</strong> 009328295440</p>
+            <div id="status-2" class="status checking">
+                ⏳ Enter ZIP code to check availability
+            </div>
+            <button id="btn-2" disabled onclick="addToCart(2)">Add to Cart</button>
+        </div>
+
+        <div class="product">
+            <h3>👕 Nike Sportswear Essential T-Shirt</h3>
+            <p><strong>Brand:</strong> Nike | <strong>Price:</strong> $25.00</p>
+            <p><strong>GTIN:</strong> 009328580522</p>
+            <div id="status-3" class="status checking">
+                ⏳ Enter ZIP code to check availability
+            </div>
+            <button id="btn-3" disabled onclick="addToCart(3)">Add to Cart</button>
+        </div>
+    </div>
+
+    <div class="debug">
+        <strong>🔧 Debug Log:</strong>
+        <div id="debugLog">Ready to test...</div>
+    </div>
+
+    <script>
+        let cart = [];
+        let debugMessages = [];
+
+        const products = [
+            { id: 1, gtin: '009328295433', name: 'Nike Socks (5-7)', price: 20 },
+            { id: 2, gtin: '009328295440', name: 'Nike Socks (8-12)', price: 20 },
+            { id: 3, gtin: '009328580522', name: 'Nike T-Shirt', price: 25 }
+        ];
+
+        function log(message) {
+            const time = new Date().toLocaleTimeString();
+            debugMessages.push(`[${time}] ${message}`);
+            if (debugMessages.length > 8) debugMessages.shift();
+            document.getElementById('debugLog').innerHTML = debugMessages.join('<br>');
+            console.log(message);
+        }
+
+        function updateSystemStatus(message, type = 'info') {
+            const status = document.getElementById('systemStatus');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        class SimpleJENNi {
+            constructor() {
+                this.apiHost = 'http://35.209.65.82:8082';
+                this.clientId = '111038';
+                this.clientSecret = '46c3a03e-fbe0-4ae8-b74f-455f11246f91';
+                this.token = null;
+                this.tokenExpiry = 0;
+                log('JENNi API client initialized');
+            }
+
+            async getToken() {
+                if (this.token && Date.now() < this.tokenExpiry) {
+                    return this.token;
+                }
+
+                try {
+                    log('🔐 Getting authentication token...');
+                    const response = await fetch(`${this.apiHost}/api/sku-graph/product-availability-service/auth/token`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            client_id: this.clientId,
+                            client_secret: this.clientSecret
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Auth failed: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    this.token = data.access_token;
+                    this.tokenExpiry = Date.now() + (data.expires_in * 1000) - 60000;
+                    
+                    log(`✅ Token obtained: ${this.token.substring(0, 20)}...`);
+                    return this.token;
+                } catch (error) {
+                    log(`❌ Auth error: ${error.message}`);
+                    throw error;
+                }
+            }
+
+            async checkAvailability(gtin, zip) {
+                try {
+                    log(`🔍 Checking ${gtin} in ZIP ${zip}...`);
+                    const token = await this.getToken();
+                    
+                    const response = await fetch(`${this.apiHost}/api/sku-graph/product-availability-service/searchProducts/`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ gtin, page: 1, page_size: 10 })
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 404) {
+                            log(`❌ Product ${gtin} not found`);
+                            return { available: false, reason: 'Product not found' };
+                        }
+                        throw new Error(`API error: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    
+                    let available = false;
+                    let inventory = 0;
+
+                    if (data.products && data.products.length > 0) {
+                        for (const product of data.products) {
+                            for (const variant of product.variants) {
+                                if (variant.gtin === gtin && variant.zipcode_inventory && variant.zipcode_inventory[zip]) {
+                                    inventory = parseInt(variant.zipcode_inventory[zip]);
+                                    if (inventory > 0) {
+                                        available = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (available) break;
+                        }
+                    }
+
+                    const result = { available, inventory, reason: available ? 'Available' : 'Not in delivery area' };
+                    log(`📦 ${gtin}: ${available ? 'Available' : 'Not available'} (${inventory} stock)`);
+                    return result;
+
+                } catch (error) {
+                    log(`❌ Error checking ${gtin}: ${error.message}`);
+                    return { available: false, error: error.message };
+                }
+            }
+        }
+
+        const jenni = new SimpleJENNi();
+
+        async function checkAvailability() {
+            const zip = document.getElementById('zipInput').value.trim();
+            
+            if (!zip || zip.length !== 5 || !/^\d{5}$/.test(zip)) {
+                alert('Please enter a valid 5-digit ZIP code');
+                return;
+            }
+
+            updateSystemStatus(`🔍 Checking availability in ${zip}...`, 'checking');
+
+            for (const product of products) {
+                const statusDiv = document.getElementById(`status-${product.id}`);
+                const button = document.getElementById(`btn-${product.id}`);
+                
+                statusDiv.textContent = '⏳ Checking...';
+                statusDiv.className = 'status checking';
+                
+                try {
+                    const result = await jenni.checkAvailability(product.gtin, zip);
+                    
+                    if (result.available) {
+                        statusDiv.innerHTML = `✅ Available for same-day delivery!<br>📦 ${result.inventory} in stock in ${zip}`;
+                        statusDiv.className = 'status available';
+                        button.disabled = false;
+                        button.textContent = 'Add to Cart';
+                    } else {
+                        statusDiv.innerHTML = `❌ Not available in ${zip}<br>📍 ${result.reason}`;
+                        statusDiv.className = 'status unavailable';
+                        button.disabled = true;
+                        button.textContent = 'Not Available';
+                    }
+                } catch (error) {
+                    statusDiv.textContent = `❌ Error: ${error.message}`;
+                    statusDiv.className = 'status unavailable';
+                }
+            }
+
+            updateSystemStatus(`✅ Availability check complete for ${zip}`, 'available');
+        }
+
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            if (product) {
+                cart.push(product);
+                document.getElementById('cartCount').textContent = cart.length;
+                log(`🛒 Added ${product.name} to cart`);
+                
+                if (cart.length === 1) {
+                    setTimeout(() => {
+                        const total = cart.reduce((sum, item) => sum + item.price, 0);
+                        const items = cart.map(item => `• ${item.name} - $${item.price}`).join('\n');
+                        alert(`🛒 Cart Preview:\n\n${items}\n\nTotal: $${total}\n\n(In a real store, this would proceed to JENNi checkout)`);
+                    }, 500);
+                }
+            }
+        }
+
+        // Enter key support
+        document.getElementById('zipInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkAvailability();
+            }
+        });
+
+        // Initialize
+        updateSystemStatus('✅ JENNi Demo Ready - Enter ZIP code to test!', 'available');
+        log('🚀 Demo store loaded successfully');
+    </script>
+</body>
+</html>

@@ -31,11 +31,9 @@ export const shopifyConnector: Connector = {
   platform: "shopify",
 
   verifyWebhook(raw, hmac) {
-    const gen = crypto
-      .createHmac("sha256", SHOPIFY_API_SECRET!)
-      .update(raw)
-      .digest("base64");
-    return crypto.timingSafeEqual(Buffer.from(gen), Buffer.from(hmac));
+    const secret = process.env.SHOPIFY_API_SECRET || "";
+    const digest = crypto.createHmac("sha256", secret).update(raw).digest("base64");
+    return digest === hmac;
   },
 
   async extractEligibility(q, { session, productGid }) {
@@ -62,7 +60,7 @@ export const shopifyConnector: Connector = {
         zip: order.shipping_address.zip
       },
       lines: order.line_items.map((l: any) => ({
-        upc: l.sku,
+        gtin: l.sku, // Assuming Shopify SKU contains GTIN
         quantity: l.quantity,
         price: Number(l.price)
       }))
@@ -104,5 +102,10 @@ export const shopifyConnector: Connector = {
         variables: { id: foId, status: status === "Delivered" ? "SUCCESS" : "FAILURE" }
       }
     });
+  },
+
+  async syncProduct(product) {
+    // Ingest minimal fields for GTIN graph enrichment (noop placeholder)
+    // Example fields: product.id, title, vendor, variants[].barcode (GTIN), variants[].sku
   }
 };
