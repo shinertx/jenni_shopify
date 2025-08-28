@@ -1,6 +1,10 @@
 import { Queue, Worker } from "bullmq";
 import Redis from "ioredis";
+import pRetry from "p-retry";
+import pino from "pino";
 import { submitOrder } from "./core/order.js";
+
+const logger = pino();
 
 const redisOpts: any = { 
   maxRetriesPerRequest: null, // required by BullMQ
@@ -17,6 +21,13 @@ const redisOpts: any = {
 let redis: Redis | null = null;
 let orderQueue: Queue | any = null;
 let worker: Worker | null = null;
+
+const RETRY_CONFIG = {
+  retries: 5,
+  factor: 2,
+  minTimeout: 500,
+  maxTimeout: 4000
+};
 
 // Initialize Redis connection
 async function initRedis() {
@@ -41,12 +52,17 @@ async function initRedis() {
     orderQueue = new Queue("orders", { connection: redis });
     console.log('✅ Order queue created');
     
-    // Create worker
+    // Create worker with retry logic
     worker = new Worker(
       "orders",
-      async job => {
-        console.log('Processing order:', job.data.orderId);
-        await submitOrder(job.data);
+      async (job: any) => {
+        if (job.name === "forward-order") {
+          await pRetry(() => submitOrder(job.data), RETRY_CONFIG);
+          logger.info({ order_id: job.data.orderId }, 'Order processed successfully');
+        } else {
+          console.log('Processing order:', job.data.orderId);
+          await submitOrder(job.data);
+        }
       },
       { connection: redis }
     );
