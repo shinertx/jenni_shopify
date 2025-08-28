@@ -138,6 +138,8 @@ heroku create your-jenni-api
 heroku config:set JENNI_CLIENT_ID=111038
 heroku config:set JENNI_CLIENT_SECRET=46c3a03e-fbe0-4ae8-b74f-455f11246f91
 heroku config:set JENNI_API_HOST=http://35.209.65.82:8082
+heroku config:set JENNI_ORDERS_URL=https://orders.example.com
+heroku config:set JENNI_API_KEY=changeme
 
 # Deploy
 git push heroku main
