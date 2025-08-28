@@ -5,7 +5,11 @@ TL;DR: Public Shopify app that shows same‑day availability by GTIN and can for
 ## Quick start
 1. Copy env and fill values
    - cp .env.example .env
-   - Set SHOPIFY_API_KEY/SHOPIFY_API_SECRET, SHOPIFY_APP_URL (https ngrok URL), and JENNI_*.
+   - Set SHOPIFY_API_KEY/SHOPIFY_API_SECRET, SHOPIFY_APP_URL (https ngrok URL), and JENNI_*:
+     - JENNI_CLIENT_ID / JENNI_CLIENT_SECRET
+     - JENNI_API_HOST
+     - JENNI_ORDERS_URL
+     - JENNI_API_KEY
 2. Install & run
    - npm install
    - npm run dev (API at http://localhost:4000)
@@ -19,7 +23,7 @@ TL;DR: Public Shopify app that shows same‑day availability by GTIN and can for
   - Server fetches JENNi API with cached OAuth token; results cached in Redis.
 - Webhooks
   - HMAC‑verified endpoints under /webhooks (GDPR, products, orders).
-  - Orders are pushed to a BullMQ queue → submitOrder (placeholder until JENNi order API is ready).
+  - Orders are pushed to a BullMQ queue → submitOrder posts to the JENNi orders API.
 - OAuth (minimal)
   - /auth/install and /auth/callback acquire a shop access token (not yet persisted).
 
@@ -44,7 +48,8 @@ TL;DR: Public Shopify app that shows same‑day availability by GTIN and can for
   - routes/gdpr.ts – mandatory GDPR endpoints
   - connectors/shopify.ts – Shopify GraphQL, webhook HMAC, queues
   - core/eligibility.ts – JENNi token + searchProducts + Redis cache
-  - core/order.ts – submitOrder placeholder
+  - lib/jenniConnector.ts – submits orders to JENNi
+  - core/order.ts – thin wrapper exporting the connector
   - queue.ts – BullMQ wiring
 - extensions/jenni-availability-widget – Theme App Extension (widget)
 - functions/delivery-customization – Shopify Function example
