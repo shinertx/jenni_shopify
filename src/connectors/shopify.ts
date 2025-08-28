@@ -4,6 +4,7 @@ import { Connector } from "./interface.js";
 import { checkEligibility } from "../core/eligibility.js";
 import { JenniOrder } from "../core/types.js";
 import { orderQueue } from "../queue.js";
+import { getShopToken } from "../lib/shopStore.js";
 
 const {
   SHOPIFY_API_KEY,
@@ -27,6 +28,13 @@ function graphqlClient(session: any) {
   return new shopify.clients.Graphql({ session });
 }
 
+function clientForShop(shopDomain: string) {
+  const token = getShopToken(shopDomain);
+  if (!token) throw new Error(`Missing token for ${shopDomain}`);
+  const session = { shop: shopDomain, accessToken: token } as any;
+  return graphqlClient(session);
+}
+
 export const shopifyConnector: Connector = {
   platform: "shopify",
 
@@ -36,8 +44,8 @@ export const shopifyConnector: Connector = {
     return digest === hmac;
   },
 
-  async extractEligibility(q, { session, productGid }) {
-    const client = graphqlClient(session);
+  async extractEligibility(q, { productGid }) {
+    const client = clientForShop(q.storeId);
     const result = await client.query({
       data: {
         query: `query ($id: ID!) { product(id:$id){ variants(first:1){ nodes{ price }}}}`,
@@ -71,8 +79,7 @@ export const shopifyConnector: Connector = {
   },
 
   async updateStatus({ storeId, orderId, status }) {
-    const session = await shopify.sessionStorage.loadSession(storeId);
-    const client = graphqlClient(session);
+    const client = clientForShop(storeId);
 
     // fetch fulfillmentOrder id
     const foRes = await client.query({

@@ -1,7 +1,7 @@
 import express from 'express';
 import crypto from 'crypto';
 import axios from 'axios';
-import { shopTokens } from './index.js';
+import { saveShopToken } from './lib/shopStore.js';
 
 // Minimal OAuth for Shopify public app (Authorization Code Flow)
 // NOTE: Replace placeholders with env vars and add persistence for production.
@@ -52,7 +52,7 @@ auth.get('/callback', async (req, res) => {
       code
     });
     const accessToken = tokenRes.data.access_token as string;
-    shopTokens[shop] = accessToken;
+    saveShopToken(shop, accessToken);
 
     // Register webhooks (order create, app/uninstalled, product update)
     const webhookTopics = [

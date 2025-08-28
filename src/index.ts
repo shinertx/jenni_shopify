@@ -12,9 +12,6 @@ const app = express();
 app.use(pino());
 app.use(express.json());
 
-// Simple in-memory shop token map (replace with Redis/DB in prod)
-export const shopTokens: Record<string, string> = {};
-
 // Health
 app.get('/_health', (req, res) => {
   res.json({ ok: true, time: new Date().toISOString() });
