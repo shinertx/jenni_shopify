@@ -13,7 +13,7 @@ const {
   SHOPIFY_ADMIN_API_VERSION
 } = process.env;
 
-const shopify = new Shopify({
+export const shopify = new Shopify({
   apiKey: SHOPIFY_API_KEY!,
   apiSecretKey: SHOPIFY_API_SECRET!,
   scopes: (SHOPIFY_SCOPES ?? "").split(","),
