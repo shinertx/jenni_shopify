@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { Shopify } from "@shopify/shopify-api";
+import { shopifyApi } from "@shopify/shopify-api";
 
 const {
   SHOPIFY_API_KEY,
@@ -9,7 +9,7 @@ const {
   SHOPIFY_ADMIN_API_VERSION
 } = process.env;
 
-const shopify = new Shopify({
+const shopify = shopifyApi({
   apiKey: SHOPIFY_API_KEY!,
   apiSecretKey: SHOPIFY_API_SECRET!,
   scopes: (SHOPIFY_SCOPES ?? "").split(","),
@@ -19,7 +19,7 @@ const shopify = new Shopify({
 });
 
 (async () => {
-  const session = await shopify.sessionStorage.findSessionsByShop("YOURSHOP.myshopify.com").then(s => s[0]);
+  const session = await shopify.session.findSessionsByShop("YOURSHOP.myshopify.com").then((s: any[]) => s[0]);
   if (!session) throw new Error("Session not found");
   const client = new shopify.clients.Graphql({ session });
   const res = await client.query({

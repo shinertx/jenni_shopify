@@ -1,29 +1,36 @@
-import { Shopify } from "@shopify/shopify-api";
+import { shopifyApi, LATEST_API_VERSION, Session } from "@shopify/shopify-api";
 import crypto from "crypto";
 import { Connector } from "./interface.js";
 import { checkEligibility } from "../core/eligibility.js";
 import { JenniOrder } from "../core/types.js";
 import { orderQueue } from "../queue.js";
+import { shopTokens } from "../index.js";
 
 const {
   SHOPIFY_API_KEY,
   SHOPIFY_API_SECRET,
   SHOPIFY_SCOPES,
   SHOPIFY_APP_URL,
-  SHOPIFY_ADMIN_API_VERSION
 } = process.env;
 
-const shopify = new Shopify({
+const shopify = shopifyApi({
   apiKey: SHOPIFY_API_KEY!,
   apiSecretKey: SHOPIFY_API_SECRET!,
   scopes: (SHOPIFY_SCOPES ?? "").split(","),
   hostName: new URL(SHOPIFY_APP_URL!).host,
   isEmbeddedApp: true,
-  apiVersion: SHOPIFY_ADMIN_API_VERSION as any
+  apiVersion: LATEST_API_VERSION
 });
 
 // Helper to get GraphQL client
-function graphqlClient(session: any) {
+function graphqlClient(shop: string, accessToken: string) {
+  const session = new Session({
+    id: `${shop}-jenni-session`, // A unique ID for the session
+    shop,
+    accessToken,
+    isOnline: false,
+    state: 'state'
+  });
   return new shopify.clients.Graphql({ session });
 }
 
@@ -36,14 +43,15 @@ export const shopifyConnector: Connector = {
     return digest === hmac;
   },
 
-  async extractEligibility(q, { session, productGid }) {
-    const client = graphqlClient(session);
-    const result = await client.query({
+  async extractEligibility(q, { shop, accessToken, productGid }) {
+    const client = graphqlClient(shop, accessToken);
+    const result: any = await client.query({
       data: {
         query: `query ($id: ID!) { product(id:$id){ variants(first:1){ nodes{ price }}}}`,
         variables: { id: productGid }
       }
     });
+    if (!result.body || !result.body.data) throw new Error("GraphQL query failed");
     q.price = Number(result.body.data.product.variants.nodes[0].price);
     const res = await checkEligibility(q);
     return res.eligible;
@@ -70,17 +78,24 @@ export const shopifyConnector: Connector = {
     return jenniOrder;
   },
 
+  async syncProduct(product: any) {
+    console.log('Product sync received for', product.id);
+    // TODO: Handle product sync
+  },
+
   async updateStatus({ storeId, orderId, status }) {
-    const session = await shopify.sessionStorage.loadSession(storeId);
-    const client = graphqlClient(session);
+    const accessToken = shopTokens[storeId];
+    if (!accessToken) throw new Error(`No token for shop ${storeId}`);
+    const client = graphqlClient(storeId, accessToken);
 
     // fetch fulfillmentOrder id
-    const foRes = await client.query({
+    const foRes: any = await client.query({
       data: {
         query: `query($orderId: ID!){ order(id:$orderId){ fulfillmentOrders(first:1){ nodes{ id }}}}`,
         variables: { orderId: `gid://shopify/Order/${orderId}` }
       }
     });
+    if (!foRes.body || !foRes.body.data) throw new Error("GraphQL query failed");
     const foId = foRes.body.data.order.fulfillmentOrders.nodes[0].id;
 
     await client.query({
@@ -99,13 +114,11 @@ export const shopifyConnector: Connector = {
             ) { userErrors { field message } }
           }
         `,
-        variables: { id: foId, status: status === "Delivered" ? "SUCCESS" : "FAILURE" }
+        variables: {
+          id: foId,
+          status
+        }
       }
     });
-  },
-
-  async syncProduct(product) {
-    // Ingest minimal fields for GTIN graph enrichment (noop placeholder)
-    // Example fields: product.id, title, vendor, variants[].barcode (GTIN), variants[].sku
   }
 };

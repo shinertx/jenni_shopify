@@ -2,31 +2,33 @@
   "name": "jenni-api-test",
   "version": "1.0.0",
   "type": "module",
+  "description": "JENNi Integration for Shopify",
+  "main": "dist/src/index.js",
   "scripts": {
-    "test": "node testJenniAPI.js",
-    "demo": "node scripts/demo-server.cjs",
-    "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/index.js",
-    "health": "curl -s http://localhost:3000/_health || true"
+    "start": "node dist/src/index.js",
+    "dev": "tsx watch src/index.ts",
+    "dev:build": "npm run build && npm start",
+    "test": "echo \"No test specified\"",
+    "demo": "node scripts/demo-server.cjs",
+    "check": "curl -s http://localhost:4000/_health | jq ."
   },
   "dependencies": {
     "@shopify/shopify-api": "^9.7.2",
-    "axios": "^1.7.0",
+    "axios": "^1.6.7",
     "body-parser": "^1.20.2",
-    "bullmq": "^5.7.11",
-    "cors": "^2.8.5",
+    "bullmq": "^5.4.0",
     "dotenv": "^16.4.0",
-    "express": "^4.21.2",
-    "http-proxy-middleware": "^3.0.5",
-    "ioredis": "^5.4.1",
-    "node-fetch": "^3.3.2",
-    "pino-http": "^10.5.0"
+    "express": "^4.18.2",
+    "ioredis": "^5.3.2",
+    "pino": "^8.18.0",
+    "pino-http": "^10.5.0",
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3"
   },
   "devDependencies": {
-    "@types/express": "^5.0.3",
-    "@types/node": "^24.2.1",
-    "typescript": "^5.4.0",
-    "tsx": "^4.7.0"
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.16",
+    "pm2": "^6.0.8"
   }
 }

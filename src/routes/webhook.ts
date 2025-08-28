@@ -28,6 +28,9 @@ webhook.post(
       return res.status(401).end();
     }
     const product = JSON.parse(req.body.toString("utf8"));
+    if (!shopifyConnector.syncProduct) return res.status(404).end();
+    if (!shopifyConnector.syncProduct) return res.status(404).end();
+    if (!shopifyConnector.syncProduct) return res.status(404).end();
     await shopifyConnector.syncProduct(product);
     res.status(200).end();
   }

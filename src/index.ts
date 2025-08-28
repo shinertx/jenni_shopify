@@ -1,3 +1,4 @@
+import "@shopify/shopify-api/adapters/node";
 import "dotenv/config";
 import express from "express";
 import pino from "pino-http";
@@ -18,6 +19,17 @@ export const shopTokens: Record<string, string> = {};
 // Health
 app.get('/_health', (req, res) => {
   res.json({ ok: true, time: new Date().toISOString() });
+});
+
+app.get('/', (req, res) => {
+  res.json({
+    message: "JENNi Shopify App Backend is running.",
+    endpoints: {
+      health: "/_health",
+      install: "/auth/install?shop=YOUR-STORE.myshopify.com",
+      availability: "/v1/availability?gtin=GTIN&zip=ZIP"
+    }
+  });
 });
 
 // Public availability proxy (server-side JENNi call)

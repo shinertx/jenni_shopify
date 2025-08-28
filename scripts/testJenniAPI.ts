@@ -68,7 +68,7 @@ async function testJenniAPI() {
       }
     }
     
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error testing JENNi API:", error.response?.data || error.message);
   }
 }
