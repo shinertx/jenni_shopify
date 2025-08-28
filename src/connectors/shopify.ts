@@ -66,7 +66,7 @@ export const shopifyConnector: Connector = {
       }))
     };
     // push to queue to avoid webhook timeout
-    await orderQueue.add("order", jenniOrder);
+    await orderQueue.add("forward-order", jenniOrder);
     return jenniOrder;
   },
 
