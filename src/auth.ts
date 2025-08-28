@@ -2,6 +2,7 @@ import express from 'express';
 import crypto from 'crypto';
 import axios from 'axios';
 import { shopTokens } from './index.js';
+import { shopify } from './connectors/shopify.js';
 
 // Minimal OAuth for Shopify public app (Authorization Code Flow)
 // NOTE: Replace placeholders with env vars and add persistence for production.
@@ -12,7 +13,6 @@ const SHOPIFY_API_KEY = process.env.SHOPIFY_API_KEY || '';
 const SHOPIFY_API_SECRET = process.env.SHOPIFY_API_SECRET || '';
 const APP_URL = process.env.SHOPIFY_APP_URL || '';
 const SCOPES = process.env.SHOPIFY_SCOPES || 'read_products';
-const API_VERSION = process.env.SHOPIFY_ADMIN_API_VERSION || '2024-07';
 
 const pendingStates = new Map<string,string>();
 
@@ -54,26 +54,13 @@ auth.get('/callback', async (req, res) => {
     const accessToken = tokenRes.data.access_token as string;
     shopTokens[shop] = accessToken;
 
-    // Register webhooks (order create, app/uninstalled, product update)
-    const webhookTopics = [
-      { topic: 'orders/create', path: '/webhooks/shopify/order' },
-      { topic: 'app/uninstalled', path: '/webhooks/gdpr' },
-      { topic: 'products/update', path: '/webhooks/shopify/products' }
-    ];
-
-    for (const w of webhookTopics) {
-      try {
-        await axios.post(`https://${shop}/admin/api/${API_VERSION}/webhooks.json`, {
-          webhook: {
-            topic: w.topic,
-            address: `${APP_URL}${w.path}`,
-            format: 'json'
-          }
-        }, { headers: { 'X-Shopify-Access-Token': accessToken, 'Content-Type': 'application/json' } });
-      } catch (e:any) {
-        console.error('Webhook register failed', w.topic, e.response?.data || e.message);
-      }
-    }
+    const shopDomain = shop as string;
+    await shopify.webhooks.register({
+      shop: shopDomain,
+      accessToken,
+      topics: ['ORDERS_CREATE', 'APP_UNINSTALLED'],
+      callbackUrl: `${process.env.APP_URL}/webhooks/shopify/order`
+    });
 
     // Redirect to embedded app inside admin
     res.redirect(`https://${shop}/admin/apps/${SHOPIFY_API_KEY}`);
