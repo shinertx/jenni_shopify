@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JENNi Universal Frontend Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        .product-card {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        .test-results {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 JENNi Universal Frontend Library Test</h1>
+    
+    <!-- Test Section 1: Manual Widget Creation -->
+    <div class="test-section">
+        <h2>📦 TEST 1: Manual Widget Creation</h2>
+        <div class="product-card">
+            <h3>Nike 6-Pack Crew Socks</h3>
+            <p><strong>GTIN:</strong> 009328295433</p>
+            <p><strong>Price:</strong> $20.00</p>
+            <div id="manual-widget-container"></div>
+            <button onclick="testManualWidget()">Create Manual Widget</button>
+        </div>
+    </div>
+
+    <!-- Test Section 2: Auto-Detection Test -->
+    <div class="test-section">
+        <h2>🔍 TEST 2: Auto-Detection</h2>
+        <div class="product-card">
+            <h3>Nike Windrunner Jacket</h3>
+            <p class="sku">009328580522</p>
+            <p><strong>Price:</strong> $50.00</p>
+            <div data-sku="009328580522" class="product-details">
+                <!-- Widget should auto-appear here -->
+            </div>
+            <button onclick="testAutoDetection()">Test Auto-Detection</button>
+        </div>
+    </div>
+
+    <!-- Test Section 3: API Integration Test -->
+    <div class="test-section">
+        <h2>🔌 TEST 3: Direct API Calls</h2>
+        <div>
+            <label>GTIN: <input type="text" id="test-gtin" value="009328295433" /></label><br><br>
+            <label>ZIP: <input type="text" id="test-zip" value="75062" /></label><br><br>
+            <button onclick="testDirectAPI()">Test Direct API Call</button>
+            <div id="api-results" class="test-results"></div>
+        </div>
+    </div>
+
+    <!-- Test Section 4: Platform Detection -->
+    <div class="test-section">
+        <h2>🌐 TEST 4: Platform Detection</h2>
+        <button onclick="testPlatformDetection()">Test Platform Detection</button>
+        <div id="platform-results" class="test-results"></div>
+    </div>
+
+    <!-- Test Section 5: Event System -->
+    <div class="test-section">
+        <h2>📡 TEST 5: Event System</h2>
+        <button onclick="testEventSystem()">Test Custom Events</button>
+        <div id="event-results" class="test-results"></div>
+    </div>
+
+    <!-- Console Output -->
+    <div class="test-section">
+        <h2>📋 Test Console</h2>
+        <div id="console-output" class="test-results" style="height: 200px; overflow-y: auto;"></div>
+        <button onclick="clearConsole()">Clear Console</button>
+    </div>
+
+    <!-- Include the Universal JENNi Library -->
+    <script src="../../jenni-universal.js"></script>
+    
+    <script>
+        // Override console.log to capture output
+        const originalLog = console.log;
+        const originalError = console.error;
+        const consoleOutput = document.getElementById('console-output');
+        
+        function addToConsole(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            consoleOutput.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        console.log = (...args) => {
+            originalLog(...args);
+            addToConsole(args.join(' '), 'info');
+        };
+        
+        console.error = (...args) => {
+            originalError(...args);
+            addToConsole(args.join(' '), 'error');
+        };
+        
+        function clearConsole() {
+            consoleOutput.innerHTML = '';
+        }
+
+        // Test Functions
+        function testManualWidget() {
+            console.log('🧪 Testing manual widget creation...');
+            
+            try {
+                const container = document.getElementById('manual-widget-container');
+                container.innerHTML = ''; // Clear previous
+                
+                if (window.JENNi) {
+                    const widget = window.JENNi.createWidget(container, {
+                        gtin: '009328295433',
+                        defaultZip: '75062'
+                    });
+                    
+                    if (widget) {
+                        console.log('✅ Manual widget created successfully');
+                        addToConsole('✅ Manual widget created successfully', 'success');
+                    } else {
+                        console.error('❌ Widget creation returned null');
+                        addToConsole('❌ Widget creation returned null', 'error');
+                    }
+                } else {
+                    console.error('❌ JENNi library not loaded');
+                    addToConsole('❌ JENNi library not loaded', 'error');
+                }
+            } catch (error) {
+                console.error('❌ Manual widget creation failed:', error);
+                addToConsole(`❌ Manual widget creation failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function testAutoDetection() {
+            console.log('🧪 Testing auto-detection...');
+            
+            try {
+                if (window.JENNi) {
+                    const sku = window.JENNi.findProductSku();
+                    console.log('Found SKU:', sku);
+                    addToConsole(`Found SKU: ${sku}`, sku ? 'success' : 'error');
+                    
+                    window.JENNi.autoIntegrate();
+                    console.log('✅ Auto-integration triggered');
+                    addToConsole('✅ Auto-integration triggered', 'success');
+                } else {
+                    console.error('❌ JENNi library not available');
+                    addToConsole('❌ JENNi library not available', 'error');
+                }
+            } catch (error) {
+                console.error('❌ Auto-detection failed:', error);
+                addToConsole(`❌ Auto-detection failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testDirectAPI() {
+            console.log('🧪 Testing direct API calls...');
+            
+            const gtin = document.getElementById('test-gtin').value;
+            const zip = document.getElementById('test-zip').value;
+            const resultsDiv = document.getElementById('api-results');
+            
+            resultsDiv.innerHTML = 'Testing API call...';
+            
+            try {
+                if (window.JENNi) {
+                    const result = await window.JENNi.checkEligibility(gtin, zip);
+                    
+                    resultsDiv.innerHTML = `
+                        <div class="success">✅ API Call Successful</div>
+                        <div>GTIN: ${gtin}</div>
+                        <div>ZIP: ${zip}</div>
+                        <div>Eligible: ${result.eligible}</div>
+                        <div>Inventory: ${result.inventory || 'N/A'}</div>
+                        <div>Product: ${result.productInfo?.title || 'N/A'}</div>
+                        <div>Price: $${result.productInfo?.price || 'N/A'}</div>
+                    `;
+                    
+                    console.log('✅ Direct API call successful:', result);
+                    addToConsole(`✅ Direct API call successful for ${gtin} in ${zip}`, 'success');
+                } else {
+                    resultsDiv.innerHTML = '<div class="error">❌ JENNi library not available</div>';
+                    addToConsole('❌ JENNi library not available for API call', 'error');
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">❌ API call failed: ${error.message}</div>`;
+                console.error('❌ Direct API call failed:', error);
+                addToConsole(`❌ Direct API call failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function testPlatformDetection() {
+            console.log('🧪 Testing platform detection...');
+            
+            const resultsDiv = document.getElementById('platform-results');
+            
+            try {
+                // Simulate different platforms
+                const platforms = [];
+                
+                if (window.Shopify) platforms.push('Shopify');
+                if (window.wc_add_to_cart_params) platforms.push('WooCommerce');
+                if (document.body.classList.contains('woocommerce')) platforms.push('WooCommerce (CSS)');
+                if (window.BLANK_CONFIG) platforms.push('Magento');
+                if (document.body.classList.contains('catalog-product-view')) platforms.push('Magento (CSS)');
+                
+                resultsDiv.innerHTML = `
+                    <div>Platform Detection Results:</div>
+                    <div>Detected Platforms: ${platforms.length > 0 ? platforms.join(', ') : 'Generic/Custom'}</div>
+                    <div>User Agent: ${navigator.userAgent.substring(0, 50)}...</div>
+                    <div>Current URL: ${window.location.href}</div>
+                `;
+                
+                console.log('✅ Platform detection completed');
+                addToConsole(`✅ Platform detection: ${platforms.length > 0 ? platforms.join(', ') : 'Generic'}`, 'success');
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">❌ Platform detection failed: ${error.message}</div>`;
+                console.error('❌ Platform detection failed:', error);
+                addToConsole(`❌ Platform detection failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function testEventSystem() {
+            console.log('🧪 Testing event system...');
+            
+            const resultsDiv = document.getElementById('event-results');
+            let eventCount = 0;
+            
+            try {
+                // Listen for JENNi events
+                window.addEventListener('jenni:eligible', (event) => {
+                    eventCount++;
+                    console.log('📡 Received jenni:eligible event:', event.detail);
+                    addToConsole(`📡 Received jenni:eligible event (${eventCount})`, 'success');
+                });
+                
+                window.addEventListener('jenni:orderUpdate', (event) => {
+                    eventCount++;
+                    console.log('📡 Received jenni:orderUpdate event:', event.detail);
+                    addToConsole(`📡 Received jenni:orderUpdate event (${eventCount})`, 'success');
+                });
+                
+                // Trigger test events
+                window.dispatchEvent(new CustomEvent('jenni:eligible', {
+                    detail: { gtin: 'test-gtin', zip: 'test-zip', available: true }
+                }));
+                
+                window.dispatchEvent(new CustomEvent('jenni:orderUpdate', {
+                    detail: { orderId: 'TEST-001', status: 'shipped' }
+                }));
+                
+                resultsDiv.innerHTML = `
+                    <div class="success">✅ Event system test completed</div>
+                    <div>Events triggered: 2</div>
+                    <div>Events received: ${eventCount}</div>
+                    <div>Event listeners: Active</div>
+                `;
+                
+                console.log('✅ Event system test completed');
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">❌ Event system test failed: ${error.message}</div>`;
+                console.error('❌ Event system test failed:', error);
+                addToConsole(`❌ Event system test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 JENNi Universal Frontend Test Page Loaded');
+            console.log('JENNi Library Available:', !!window.JENNi);
+            
+            if (window.JENNi) {
+                console.log('JENNi Config:', window.JENNi.config);
+                addToConsole('✅ JENNi Universal Library loaded successfully', 'success');
+            } else {
+                console.error('❌ JENNi Universal Library not found');
+                addToConsole('❌ JENNi Universal Library not found', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

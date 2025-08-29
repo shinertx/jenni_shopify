@@ -9,7 +9,7 @@
     "start": "node dist/src/index.js",
     "dev": "tsx watch src/index.ts",
     "dev:build": "npm run build && npm start",
-    "test": "echo \"No test specified\"",
+    "test": "node tests/test-simple.js",
     "demo": "node scripts/demo-server.cjs",
     "check": "curl -s http://localhost:4000/_health | jq ."
   },
