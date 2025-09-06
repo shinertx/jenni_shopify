@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>JENNi Edge Demo – PDP</title>
+  <meta property="og:title" content="Demo Running Shoes"/>
+  <meta itemprop="brand" content="DemoBrand"/>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;padding:24px;background:#f9fafb;color:#111}
+    .pdp{display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:980px;margin:0 auto}
+    .box{background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);padding:16px}
+    .price{font-weight:600;font-size:20px}
+    .buy{margin-top:16px;padding:10px 14px;background:#111827;color:#fff;border:none;border-radius:8px;cursor:pointer}
+  </style>
+  <script defer src="./edge.js"></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      window.JenniEdge.init({ tenant: 'demo', zip: '10001' });
+    });
+  </script>
+  <meta itemprop="sku" content="DEMO-1234"/>
+  <meta itemprop="gtin13" content="0009328295433"/>
+</head>
+<body>
+  <div class="pdp">
+    <div class="box">
+      <img alt="Running Shoe" src="https://picsum.photos/seed/jenni/600/380" style="width:100%;border-radius:8px"/>
+    </div>
+    <div class="box">
+      <h1>Demo Running Shoes</h1>
+      <div class="price">$89.00</div>
+      <p>Comfortable, lightweight, and ready for your next sprint. Sizes 7–12.</p>
+      <button class="buy">Add to cart</button>
+    </div>
+  </div>
+</body>
+</html>
+

@@ -29,8 +29,6 @@ webhook.post(
     }
     const product = JSON.parse(req.body.toString("utf8"));
     if (!shopifyConnector.syncProduct) return res.status(404).end();
-    if (!shopifyConnector.syncProduct) return res.status(404).end();
-    if (!shopifyConnector.syncProduct) return res.status(404).end();
     await shopifyConnector.syncProduct(product);
     res.status(200).end();
   }
@@ -41,3 +39,27 @@ webhook.post("/jenni/status", express.json(), async (req, res) => {
   await shopifyConnector.updateStatus(req.body);
   res.status(200).end();
 });
+
+// shopify app/uninstalled
+webhook.post(
+  "/shopify/app-uninstalled",
+  bodyParser.raw({ type: "*/*" }),
+  async (req, res) => {
+    if (!shopifyConnector.verifyWebhook(req.body, req.get("X-Shopify-Hmac-Sha256")!)) {
+      return res.status(401).end();
+    }
+    try {
+      const payload = JSON.parse(req.body.toString("utf8"));
+      // Optional cleanup handled in tokens module if present
+      try {
+        const { shopTokens } = await import("../tokens.js");
+        if (payload?.myshopify_domain && shopTokens[payload.myshopify_domain]) {
+          delete shopTokens[payload.myshopify_domain];
+        }
+      } catch {}
+      res.status(200).end();
+    } catch {
+      res.status(200).end();
+    }
+  }
+);

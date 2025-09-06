@@ -1,0 +1,22 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><title>JENNi URL Demo</title><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;background:#f1f5f9;color:#0f172a}header{background:#0f172a;color:#fff;padding:22px 26px}h1{margin:0;font-size:20px}main{max-width:880px;margin:30px auto;padding:0 20px 60px}section{background:#fff;padding:20px 22px;margin-bottom:22px;border-radius:16px;box-shadow:0 4px 10px rgba(0,0,0,.06);border:1px solid #e2e8f0}label{font-size:12px;text-transform:uppercase;font-weight:600;letter-spacing:.7px;display:block;margin-bottom:6px;color:#475569}input{width:100%;padding:12px 14px;border:1px solid #cbd5e1;border-radius:12px;font-size:14px;background:#fff}button{background:#0f172a;color:#fff;border:none;padding:12px 18px;border-radius:12px;font-size:14px;cursor:pointer}code{background:#0f172a;color:#e2e8f0;padding:4px 6px;border-radius:6px;font-size:12px}table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}th,td{padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:left}th{background:#f8fafc;font-weight:600}.pill{display:inline-block;background:#10b981;color:#fff;padding:4px 10px;border-radius:999px;font-size:12px;margin-right:6px}.neg{background:#6b7280}footer{text-align:center;font-size:12px;color:#64748b;margin-top:40px}.row{display:grid;grid-template-columns:1fr 140px 140px;gap:16px;align-items:end}.statusBox{margin-top:14px;font-size:13px;color:#475569;min-height:20px}</style>
+</head><body><header><h1>JENNi Product URL Demo</h1><div style="opacity:.85;font-size:13px;margin-top:4px">Paste a product page link. No install or bookmarklet needed.</div></header>
+<main>
+  <section>
+    <div class="row">
+      <div><label>Product URL</label><input id="url" placeholder="https://store.example.com/product"/></div>
+      <div><label>ZIP</label><input id="zip" value="10001"/></div>
+      <div style="display:flex;gap:10px"><button id="run" style="flex:1">Show Stores</button></div>
+    </div>
+    <div class="statusBox" id="status"></div>
+  </section>
+  <section id="result" style="display:none">
+    <h2 style="margin:0 0 10px;font-size:18px">Result</h2>
+    <div id="summary" style="margin-bottom:14px"></div>
+    <div id="economics" style="margin-bottom:16px"></div>
+    <table id="nodesTbl" style="display:none"><thead><tr><th>Store</th><th>Dist (mi)</th><th>ETA (m)</th><th>Match</th><th>Margin</th><th>Pass</th></tr></thead><tbody></tbody></table>
+  </section>
+  <footer>Powered by JENNi demo • <a href="/edge/install" style="color:#059669;text-decoration:none">Install Options</a></footer>
+</main>
+<script>(function(){const $=id=>document.getElementById(id);$('run').addEventListener('click',async()=>{const url=($('url').value||'').trim();const zip=($('zip').value||'').replace(/[^0-9]/g,'').slice(0,10)||'10001';if(!/^https?:\/\//i.test(url)){ $('status').textContent='Enter a full URL starting with http or https'; return;}$('status').textContent='Fetching page & finding nearby stores…';$('result').style.display='none';try{const r=await fetch('/edge/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,zip})});const j=await r.json();if(!j.ok){$('status').textContent='Error: '+(j.error||'failed');return;}$('result').style.display='block';$('status').textContent='';const pill=j.eligible?'<span class="pill">Eligible</span>':'<span class="pill neg">Not Eligible</span>';$('summary').innerHTML=pill+'<strong>'+(j.fingerprint&&j.fingerprint.title||'Product')+'</strong> • ZIP '+zip+(j.exactMatch?' • Exact Match':'');const pg=j.profitGuard||{};$('economics').innerHTML='ProfitGuard: '+(pg.pass?'Pass ✅':'Hold ⚠️')+' • Margin $'+(pg.margin||'--')+' vs Target $'+(pg.floor||'--')+' • Trust '+(pg.trustScore?Math.round(pg.trustScore*100)+'%':'--');const tbl=$('nodesTbl');const tbody=tbl.querySelector('tbody');tbody.innerHTML='';(j.nodes||[]).forEach(n=>{const tr=document.createElement('tr');tr.innerHTML='<td>'+n.name+'</td><td>'+(n.distanceMiles?n.distanceMiles.toFixed(1):'–')+'</td><td>'+(n.etaMinutes||'–')+'</td><td>'+(n.productMatch?'Likely':'')+'</td><td>$'+(n.margin||'–')+'</td><td>'+(n.pgPass?'Yes':'No')+'</td>';tbody.appendChild(tr);});tbl.style.display=(j.nodes&&j.nodes.length)?'table':'none';}catch(e){$('status').textContent='Failed: '+(e.message||e);}});})();</script>
+</body></html>

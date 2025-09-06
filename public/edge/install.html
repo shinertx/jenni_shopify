@@ -1,0 +1,33 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><title>JENNi Demo Installer</title><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;padding:0;background:#f8fafc;color:#0f172a}header{background:#0f172a;color:#fff;padding:24px 28px;border-bottom:4px solid #10b981}h1{margin:0;font-size:22px;letter-spacing:.5px}main{max-width:860px;margin:30px auto;padding:0 20px 60px}section{background:#fff;padding:20px 22px;margin-bottom:22px;border-radius:14px;box-shadow:0 4px 12px rgba(0,0,0,.06);border:1px solid #e2e8f0}label{font-size:12px;text-transform:uppercase;font-weight:600;letter-spacing:.8px;display:block;margin-bottom:6px;color:#475569}input,select{width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;font-size:14px;font-family:inherit;background:#fff}code.snip{display:block;white-space:pre;overflow:auto;background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:10px;font-size:13px;line-height:1.4;margin-top:10px;position:relative}button.copy{position:absolute;top:8px;right:8px;background:#10b981;border:none;color:#fff;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px}small.note{color:#475569;display:block;margin-top:8px;font-size:12px}footer{font-size:12px;color:#64748b;text-align:center;margin-top:40px} .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:18px;margin-bottom:14px} .actions{display:flex;gap:12px;margin-top:14px;flex-wrap:wrap} .actions button{background:#0f172a;color:#fff;border:none;padding:10px 16px;border-radius:10px;font-size:14px;cursor:pointer} .pill-preview{margin-top:24px;min-height:90px} .warn{background:#fef9c3;padding:10px 14px;border:1px solid #fde68a;border-radius:10px;font-size:13px;color:#92400e;margin-top:14px}a{color:#059669;text-decoration:none}a:hover{text-decoration:underline}</style>
+</head><body><header><h1>JENNi Demo Installer</h1><div style="font-size:13px;opacity:.85;margin-top:4px">Copy & paste – no coding required</div></header>
+<main>
+  <section>
+    <h2 style="margin:0 0 14px;font-size:18px">1. Set your options</h2>
+    <div class="row">
+      <div><label>Tenant</label><input id="tenant" value="demo"/></div>
+      <div><label>Default ZIP</label><input id="zip" value="10001"/></div>
+      <div><label>Position</label><select id="position"><option value="bottom-right" selected>Bottom Right</option><option value="bottom-left">Bottom Left</option><option value="top-right">Top Right</option><option value="top-left">Top Left</option></select></div>
+      <div><label>Auto Open Panel?</label><select id="open"><option value="0" selected>No</option><option value="1">Yes</option></select></div>
+    </div>
+    <div class="row">
+      <div><label>Force Mock (offline)</label><select id="mock"><option value="0" selected>No</option><option value="1">Yes</option></select></div>
+      <div><label>Script Type</label><select id="mode"><option value="embed" selected>Single tag (recommended)</option><option value="loader">Two-step loader</option></select></div>
+    </div>
+    <div class="actions"><button id="refresh">Update Snippet</button><button id="test">Show Widget Here</button></div>
+    <div class="warn">This demo link is temporary. If the green widget stops appearing, the link or server may be offline.</div>
+  </section>
+  <section>
+    <h2 style="margin:0 0 14px;font-size:18px">2. Copy this code</h2>
+    <code class="snip" id="snippet"><button class="copy" id="copyBtn">Copy</button><span id="codeText"></span></code>
+    <small class="note">Paste into the HTML of a product page. Save & refresh.</small>
+  </section>
+  <section>
+    <h2 style="margin:0 0 14px;font-size:18px">3. What to expect</h2>
+    <p style="margin:0 0 10px;font-size:14px;line-height:1.5">A small green pill appears in the corner. Click it (or it auto‑opens) to see nearby store speed. Change ZIP inside panel.</p>
+    <div class="pill-preview" id="previewArea"></div>
+  </section>
+  <footer>JENNi Demo • <a href="/edge/client.js" target="_blank" rel="noopener" style="color:#059669;text-decoration:none">View client.js</a> • <a href="/edge/play" style="color:#059669;text-decoration:none">Try URL Mode</a></footer>
+</main>
+<script>(function(){const BASE=location.origin;const codeText=document.getElementById('codeText');function build(){const t=document.getElementById('tenant').value.trim()||'demo';const z=document.getElementById('zip').value.replace(/[^0-9]/g,'').slice(0,10)||'10001';const pos=document.getElementById('position').value;const open=document.getElementById('open').value==='1';const mock=document.getElementById('mock').value==='1';const mode=document.getElementById('mode').value;const attrs=['data-jenni-tenant="'+t+'"','data-jenni-zip="'+z+'"','data-jenni-position="'+pos+'"'];if(open)attrs.push('data-jenni-open="1"');if(mock)attrs.push('data-jenni-mock="1"');const path=mode==='loader'?'/edge/loader.js':'/edge/embed.js';const tag='<script src="'+BASE+path+'" '+attrs.join(' ')+' async></scr'+'ipt>';codeText.textContent=tag;return tag;}build();document.getElementById('refresh').onclick=build;document.getElementById('copyBtn').onclick=function(){const txt=codeText.textContent;navigator.clipboard.writeText(txt).then(()=>{const b=document.getElementById('copyBtn');b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1400);});};document.getElementById('test').onclick=function(){const ex=document.getElementById('__jenniDemoInjected');if(ex)ex.remove();const tag=build();const div=document.createElement('div');div.id='__jenniDemoInjected';div.innerHTML=tag;document.body.appendChild(div);};})();</script>
+</body></html>

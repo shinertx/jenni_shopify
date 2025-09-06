@@ -26,7 +26,6 @@ api_version = "2024-07"
 # Core webhooks for public apps
 [[webhooks.subscriptions]]
 topics = [
-  "app/uninstalled",
   "customers/data_request",
   "customers/redact",
   "shop/redact"
@@ -37,3 +36,8 @@ uri = "${SHOPIFY_APP_URL}/webhooks/gdpr"
 [[webhooks.subscriptions]]
 topics = ["products/create", "products/update"]
 uri = "${SHOPIFY_APP_URL}/webhooks/shopify/products"
+
+# App uninstall cleanup
+[[webhooks.subscriptions]]
+topics = ["app/uninstalled"]
+uri = "${SHOPIFY_APP_URL}/webhooks/shopify/app-uninstalled"

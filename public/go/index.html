@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Try Jenni — Get It Today</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;background:#f1f5f9;color:#0f172a}
+    header{background:#0f172a;color:#fff;padding:20px 24px}
+    h1{margin:0;font-size:20px}
+    main{max-width:760px;margin:26px auto;padding:0 16px 40px}
+    .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 4px 10px rgba(0,0,0,.06);padding:18px 18px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+    input[type=text]{flex:1 1 340px;padding:12px 14px;border:1px solid #cbd5e1;border-radius:10px;font-size:14px}
+    button{background:#0f172a;color:#fff;border:none;padding:12px 16px;border-radius:10px;font-size:14px;cursor:pointer}
+    button.secondary{background:#f1f5f9;color:#0f172a;border:1px solid #e2e8f0}
+    .muted{color:#64748b;font-size:12px}
+    .big{font-size:20px;font-weight:700}
+    .skeleton{background:linear-gradient(90deg,#f1f5f9,#e5e7eb,#f1f5f9);height:16px;border-radius:8px;animation:sh 1.2s infinite linear;background-size:240px 100%}
+    @keyframes sh{0%{background-position:-240px 0}100%{background-position:240px 0}}
+    .cta{display:block;width:100%;margin-top:12px}
+    .checks{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;border:1px solid #cbd5e1;background:#f8fafc;color:#0f172a}
+    .pill.pos{background:#ecfdf5;border-color:#10b981;color:#065f46}
+    .pill.neg{background:#fff7ed;border-color:#f59e0b;color:#7c2d12}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Try Jenni</h1>
+    <div class="muted" style="margin-top:4px">Copy any product link, click this page, and see if it arrives today.</div>
+  <div class="muted" style="margin-top:8px">Tunnel: <a href="https://bahrain-quoted-kings-cooking.trycloudflare.com" target="_blank" rel="noopener" style="color:#0ea5e9;text-decoration:none">https://bahrain-quoted-kings-cooking.trycloudflare.com</a></div>
+  </header>
+  <main>
+    <div class="card">
+      <div class="row">
+        <button id="useClip">Use Copied Link</button>
+        <input id="url" type="text" placeholder="Or paste product URL here" />
+        <button id="shareBtn" class="secondary" title="Share a deep link to this demo">Share</button>
+      </div>
+      <div class="row">
+        <button id="useGeo" class="secondary">Use my location</button>
+        <input id="zip" type="text" placeholder="ZIP" value="10001" style="flex:0 0 120px" />
+        <button id="go">Get Quote</button>
+      </div>
+      <div id="status" class="muted" style="min-height:18px"></div>
+      <div id="quote" style="display:none;margin-top:10px">
+        <div class="big" id="headline"></div>
+        <div id="sub" class="muted" style="margin-top:6px"></div>
+        <div id="checks" class="checks"></div>
+        <a id="checkout" class="cta" href="#" target="_blank"><button class="cta">Checkout with Jenni</button></a>
+      </div>
+    </div>
+  </main>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    async function readClipboardUrl(){ try{ const t = await navigator.clipboard.readText(); const u = new URL((t||'').trim()); return u.href; } catch { return null; } }
+    async function geolocateZip(){ return new Promise((resolve)=>{
+      if(!navigator.geolocation){ resolve(null); return; }
+      navigator.geolocation.getCurrentPosition(async (pos)=>{
+        try{ const { latitude:lat, longitude:lng } = pos.coords; const r = await fetch(`/edge/geo/rev?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`); const j = await r.json(); resolve(j&&j.zip||null); }catch{ resolve(null); }
+      }, ()=>resolve(null), { enableHighAccuracy:false, timeout:10000, maximumAge:60000 });
+    }); }
+    function cleanZip(z){ return (z||'').toString().replace(/[^0-9A-Za-z\-\s]/g,'').slice(0,10); }
+    function setStatus(t){ $('status').textContent = t||''; }
+    function renderChecks(d){
+      const el = $('checks');
+      el.innerHTML = '';
+      const pg = d && d.detail && d.detail.profitGuard ? d.detail.profitGuard : null;
+      const eta = typeof d.eta_minutes === 'number' ? d.eta_minutes : null;
+      const profitPass = pg && typeof pg.margin === 'number' && typeof pg.floor === 'number' ? (pg.margin >= pg.floor) : (d.eligible === true);
+      const trustPass = pg && typeof pg.trustScore === 'number' ? (pg.trustScore >= 0.5) : (d.eligible === true);
+      const etaPass = typeof eta === 'number' ? (eta <= 150) : false; // demo cutoff ~150m
+      function pill(label, pass, sub){
+        const span = document.createElement('span');
+        span.className = 'pill ' + (pass ? 'pos' : 'neg');
+        span.textContent = label + (sub ? (' ' + sub) : '');
+        return span;
+      }
+      el.appendChild(pill('Profit', !!profitPass, pg?`$${pg.margin?.toFixed?.(2)||pg.margin||''} ≥ $${pg.floor?.toFixed?.(2)||pg.floor||''}`:''));
+      el.appendChild(pill('Trust', !!trustPass, pg?`${pg.trustScore?.toFixed?.(2)||pg.trustScore||''} ≥ 0.50`:''));
+      el.appendChild(pill('ETA', !!etaPass, eta?`${eta}m`:'…'));
+    }
+
+    function showQuote(d){
+      $('quote').style.display = 'block';
+      $('headline').textContent = d.eligible ? `Get it Today — arrives by ${d.display.arrives_by || 'tonight'}` : 'Not available today';
+      if(d.eligible){ $('sub').textContent = `${d.currency} ${d.total} · Delivery fee ${d.display.fee}`; $('checkout').href = `https://app.jenni.to/checkout?quote_id=${encodeURIComponent(d.quote_id)}&src=go`; }
+      else { $('sub').textContent = 'Try another ZIP or product link.'; $('checkout').href = '#'; }
+      try{ renderChecks(d); }catch{}
+    }
+    $('useClip').onclick = async ()=>{ const u = await readClipboardUrl(); if(u){ $('url').value = u; setStatus('Using copied link'); } else setStatus('Clipboard empty. Paste the URL instead.'); };
+    $('shareBtn').onclick = async ()=>{
+      try{
+        const url = ($('url').value||'').trim(); const zip = cleanZip($('zip').value||'');
+        if(!url || !/^https?:\/\//i.test(url)){ setStatus('Enter a full product URL first.'); return; }
+        if(!zip){ setStatus('Enter your ZIP to include it in the link.'); return; }
+        const deep = `${location.origin}/go?url=${encodeURIComponent(url)}&zip=${encodeURIComponent(zip)}`;
+        if(navigator.share){
+          await navigator.share({ title: 'Try Jenni', text: 'Paste → Use my location → See ETA', url: deep });
+          setStatus('Shared');
+        } else if(navigator.clipboard && navigator.clipboard.writeText){
+          await navigator.clipboard.writeText(deep);
+          setStatus('Link copied');
+        } else {
+          setStatus(deep);
+        }
+      }catch(e){ setStatus('Could not share link'); }
+    };
+    $('useGeo').onclick = async ()=>{ setStatus('Locating…'); const z = await geolocateZip(); if(z){ $('zip').value = z; setStatus(''); } else setStatus('Could not detect ZIP. Enter it manually.'); };
+    $('go').onclick = async ()=>{
+      try{
+        const url = ($('url').value||'').trim(); const zip = cleanZip($('zip').value||'');
+        if(!/^https?:\/\//i.test(url)){ setStatus('Enter a full product URL starting with http or https'); return; }
+        if(!zip || zip.length < 3){ setStatus('Enter your ZIP'); return; }
+        setStatus('Fetching quote…'); $('quote').style.display='none';
+        const r = await fetch(`/edge/eligible?url=${encodeURIComponent(url)}&zip=${encodeURIComponent(zip)}&detail=1`);
+        const j = await r.json(); setStatus(''); showQuote(j);
+      } catch(e){ setStatus('Could not fetch a quote. Try again.'); }
+    };
+    // Auto proceed if deep-linked
+    (function(){ try{ const p = new URLSearchParams(location.search); const u = p.get('url'); const z = p.get('zip'); if(u){ $('url').value = u; } if(z){ $('zip').value = z; } if(u && z){ $('go').click(); } }catch{} })();
+  </script>
+</body>
+</html>

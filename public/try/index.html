@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Try Jenni Now</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;background:#f1f5f9;color:#0f172a}
+    header{background:#0f172a;color:#fff;padding:22px 24px}
+    h1{margin:0;font-size:20px}
+    main{max-width:760px;margin:26px auto;padding:0 16px}
+    .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 4px 10px rgba(0,0,0,.06);padding:18px 18px}
+    button{background:#0f172a;color:#fff;border:none;padding:12px 16px;border-radius:10px;font-size:16px;cursor:pointer}
+    input{width:100%;padding:12px 14px;border:1px solid #cbd5e1;border-radius:10px;font-size:14px;margin-top:10px}
+    .muted{color:#64748b;font-size:12px;margin-top:8px}
+  </style>
+</head>
+<body>
+  <header><h1>Try Jenni Now</h1><div class="muted" style="color:#cbd5e1">One button. We pick the easiest path.</div></header>
+  <main>
+    <div class="card">
+      <button id="go">Use Copied Link</button>
+      <input id="url" placeholder="Or paste product URL here" />
+      <div id="status" class="muted"></div>
+    </div>
+  </main>
+  <script>
+    const $ = (id)=>document.getElementById(id);
+    async function readClipboardUrl(){ try{ const t=await navigator.clipboard.readText(); const u=new URL((t||'').trim()); return u.href; }catch{ return null; } }
+    async function detect(url){ const r=await fetch('/edge/detect?url='+encodeURIComponent(url)); return await r.json(); }
+    function nav(u){ location.href = u; }
+    async function run(){
+      $('status').textContent='';
+      let url = ($('url').value||'').trim();
+      if(!url){ $('status').textContent='Reading clipboard…'; url = await readClipboardUrl(); }
+      if(!url || !/^https?:\/\//i.test(url)){ $('status').textContent='Paste a full product URL (http/https).'; $('url').focus(); return; }
+      $('status').textContent='Detecting platform…';
+      try{
+        const d = await detect(url);
+        if(d.platform === 'shopify' && d.shop){ nav('/auth/install?shop='+encodeURIComponent(d.shop)); return; }
+        if(d.platform === 'gtm'){ nav('/edge/install'); return; }
+        nav('/go?url='+encodeURIComponent(url));
+      }catch(e){ nav('/go?url='+encodeURIComponent(url)); }
+    }
+    $('go').onclick = run;
+  </script>
+</body>
+</html>
+

@@ -1,77 +1,93 @@
 import axios from "axios";
 import Redis from "ioredis";
+import pRetry from "p-retry";
 import { EligibilityQuery, EligibilityResult, JenniTokenResponse } from "./types.js";
+import { appConfig } from "../config.js";
 
-const { JENNI_CLIENT_ID, JENNI_CLIENT_SECRET, JENNI_API_HOST, REDIS_URL } = process.env;
-const redis = new Redis(REDIS_URL ?? "");
+// Optional Redis; fallback to in-memory cache if not configured
+const redis: Redis | null = appConfig.redisUrl ? new Redis(appConfig.redisUrl) : null;
+const memoryCache = new Map<string, { v: string; expireAt: number }>();
 
 let accessToken: string | null = null;
-let tokenExpiry: number = 0;
+let tokenExpiry = 0;
+let tokenPromise: Promise<string> | null = null; // simple mutex to prevent token stampede
 
 async function getAccessToken(): Promise<string> {
-  if (accessToken && Date.now() < tokenExpiry) {
-    return accessToken;
+  if (!appConfig.jenni.enabled) {
+    throw new Error('Jenni integration disabled');
   }
+  if (accessToken && Date.now() < tokenExpiry) return accessToken;
+  if (tokenPromise) return tokenPromise;
 
-  const { data } = await axios.post<JenniTokenResponse>(
-    `${JENNI_API_HOST}/api/sku-graph/product-availability-service/auth/token`,
-    {
-      client_id: JENNI_CLIENT_ID,
-      client_secret: JENNI_CLIENT_SECRET
+  tokenPromise = (async () => {
+    try {
+      const data = await pRetry(async () => {
+        const res = await axios.post<JenniTokenResponse>(
+          `${appConfig.jenni.apiHost}/api/sku-graph/product-availability-service/auth/token`,
+          {
+            client_id: appConfig.jenni.clientId,
+            client_secret: appConfig.jenni.clientSecret
+          }
+        );
+        return res.data;
+      }, { retries: 3 });
+      accessToken = data.access_token;
+      tokenExpiry = Date.now() + (data.expires_in * 1000) - 60_000; // buffer
+      return accessToken;
+    } finally {
+      tokenPromise = null;
     }
-  );
+  })();
 
-  accessToken = data.access_token;
-  tokenExpiry = Date.now() + (data.expires_in * 1000) - 60000; // 1 minute buffer
-  
-  return accessToken!;
+  return tokenPromise;
 }
 
-function cacheKey(q: EligibilityQuery) {
-  return `elig:${q.gtin}:${q.zip}`;
-}
+function cacheKey(q: EligibilityQuery) { return `elig:${q.gtin}:${q.zip}`; }
 
 export async function checkEligibility(q: EligibilityQuery): Promise<EligibilityResult> {
+  if (!appConfig.jenni.enabled) {
+    return { eligible: false }; // gracefully degrade
+  }
   const key = cacheKey(q);
-  const cached = await redis.get(key);
+  let cached: string | null = null;
+  if (redis) {
+    try { cached = await redis.get(key); } catch {}
+  } else {
+    const m = memoryCache.get(key); if (m && m.expireAt > Date.now()) cached = m.v;
+  }
   if (cached) return JSON.parse(cached);
 
   const token = await getAccessToken();
-  
   const { data } = await axios.post(
-    `${JENNI_API_HOST}/api/sku-graph/product-availability-service/searchProducts/`,
-    {
-      gtin: q.gtin,
-      zip: q.zip,
-      page: 1,
-      page_size: 10
-    },
-    {
-      headers: { 
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json"
-      }
-    }
+    `${appConfig.jenni.apiHost}/api/sku-graph/product-availability-service/searchProducts/`,
+    { gtin: q.gtin, zip: q.zip, page: 1, page_size: 10 },
+    { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
   );
 
-  // Check if any variants have inventory in the requested zip code
-  let eligible = false;
-  if (data.products && data.products.length > 0) {
-    for (const product of data.products) {
-      for (const variant of product.variants) {
-        if (variant.gtin === q.gtin && variant.zipcode_inventory && variant.zipcode_inventory[q.zip]) {
-          const inventory = parseInt(variant.zipcode_inventory[q.zip]);
-          if (inventory > 0) {
-            eligible = true;
-            break;
-          }
+  let eligible = false; let minPrice: number | undefined;
+  const products = data?.products || [];
+  for (const product of products) {
+    const variants = product?.variants || [];
+    for (const variant of variants) {
+      if (variant.gtin === q.gtin && variant.zipcode_inventory && variant.zipcode_inventory[q.zip]) {
+        const inventory = parseInt(variant.zipcode_inventory[q.zip]);
+        if (inventory > 0) {
+          eligible = true;
+          const priceNum = Number(variant.price);
+            if (Number.isFinite(priceNum)) {
+              minPrice = typeof minPrice === 'number' ? Math.min(minPrice, priceNum) : priceNum;
+            }
         }
       }
-      if (eligible) break;
     }
   }
-
   const result: EligibilityResult = { eligible };
-  await redis.set(key, JSON.stringify(result), "EX", 600); // 10m
+  if (typeof minPrice === 'number') (result as any).minPrice = minPrice;
+  const payload = JSON.stringify(result);
+  if (redis) {
+    try { await redis.set(key, payload, 'EX', 600); } catch {}
+  } else {
+    memoryCache.set(key, { v: payload, expireAt: Date.now() + 600_000 });
+  }
   return result;
 }

@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>JENNi Demo Hub</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;padding:24px;background:#f9fafb;color:#111}
+    .wrap{max-width:1000px;margin:0 auto}
+    h1{margin:0 0 8px}
+    .sub{color:#6b7280;margin-bottom:20px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin:12px 0}
+    .row{display:flex;gap:16px;flex-wrap:wrap}
+    .col{flex:1 1 320px}
+    input,button,textarea{font:inherit}
+    input[type=text]{width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:8px}
+    button{padding:10px 14px;border-radius:8px;border:1px solid #e5e7eb;background:#111827;color:#fff;cursor:pointer}
+    pre{background:#0b1020;color:#e5e7eb;padding:12px;border-radius:8px;overflow:auto}
+    code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    .muted{color:#6b7280}
+    .ok{color:#10b981}
+    .err{color:#ef4444}
+    .btn-light{background:#f9fafb;color:#111;border-color:#e5e7eb}
+    .small{font-size:12px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>JENNi Demo Hub</h1>
+    <div class="sub">Single place to launch the overlay, copy a bookmarklet, and call the Shopify app proxy.</div>
+
+    <div class="row">
+      <div class="col">
+        <div class="card">
+          <h3>Overlay on This Page</h3>
+          <div class="muted small">Loads the Edge overlay using your running backend.</div>
+          <div style="display:flex;gap:8px;margin:10px 0;align-items:center;flex-wrap:wrap">
+            <input id="zip" type="text" placeholder="ZIP (e.g., 10001 or 75062)" value="10001" style="flex:1 1 160px"/>
+            <label class="small muted" style="display:flex;align-items:center;gap:6px"><input id="autoOpen" type="checkbox" checked/> Auto-open</label>
+            <label class="small muted" style="display:flex;align-items:center;gap:6px">Position
+              <select id="pos" style="margin-left:6px;border:1px solid #e5e7eb;border-radius:8px;padding:6px">
+                <option value="bottom-right" selected>Bottom-right</option>
+                <option value="bottom-left">Bottom-left</option>
+                <option value="top-right">Top-right</option>
+                <option value="top-left">Top-left</option>
+              </select>
+            </label>
+            <button id="loadOverlay">Load Overlay</button>
+          </div>
+          <div id="overlayMsg" class="small muted">Client: <code id="clientUrl"></code> • API: <code id="apiUrl"></code></div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="card">
+          <h3>Bookmarklet</h3>
+          <div class="muted small">Drag to bookmarks bar or copy the code.</div>
+          <div style="display:flex;gap:8px;margin:10px 0;align-items:center">
+            <a id="bmLink" class="btn btn-light" href="#" draggable="true" style="text-decoration:none;padding:8px 12px;border:1px solid #e5e7eb;border-radius:8px;background:#f3f4f6;color:#111">JENNi Overlay</a>
+            <button id="copyBm" class="btn-light">Copy Code</button>
+          </div>
+          <pre id="bmCode" class="small"><code></code></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Shopify App Proxy – Eligibility API</h3>
+      <div class="muted small">Calls your backend at <code>/v1/availability</code>, which fetches JENNi server‑side.</div>
+      <div class="row" style="margin-top:8px">
+        <div class="col">
+          <label class="small muted">GTIN</label>
+          <input id="gtin" type="text" placeholder="e.g., 009328295433" value="009328295433"/>
+        </div>
+        <div class="col">
+          <label class="small muted">ZIP</label>
+          <input id="zip2" type="text" placeholder="ZIP" value="75062"/>
+        </div>
+        <div class="col" style="align-self:end">
+          <button id="callApi">Check Eligibility</button>
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <div class="small muted">GET <code id="reqUrl"></code></div>
+        <pre id="result" class="small"><code>// Result appears here</code></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>GTM Snippet (Custom HTML)</h3>
+      <div class="muted small">For production, host edge client and inject via GTM. For local demos, this points to your backend.</div>
+      <pre id="gtm" class="small"><code></code></pre>
+    </div>
+
+    <div class="small muted">Tips: start backend <code>npm run dev</code>. Optional PDP demo: <code>npm run edge:demo</code> then open http://localhost:3100</div>
+  </div>
+
+  <script>
+    (function(){
+      const origin = location.origin;
+      const client = origin + '/edge/client.js';
+      const api = origin + '/edge';
+      document.getElementById('clientUrl').textContent = client;
+      document.getElementById('apiUrl').textContent = api;
+
+      // Load overlay on this page
+      document.getElementById('loadOverlay').onclick = () => {
+        const zip = (document.getElementById('zip').value || '').replace(/[^0-9]/g,'').slice(0,5) || '10001';
+        const autoOpen = !!document.getElementById('autoOpen').checked;
+        const position = (document.getElementById('pos').value || 'bottom-right');
+        const s = document.createElement('script');
+        s.src = client; s.defer = true; document.head.appendChild(s);
+        s.onload = function(){
+          try { (window.JenniEdge||{init:function(){}}).init({ tenant: 'demo', zip, apiBase: api, position, autoOpenPanel: autoOpen });
+            document.getElementById('overlayMsg').innerHTML = '<span class="ok">Overlay loaded</span> • ZIP ' + zip;
+          } catch(e){ document.getElementById('overlayMsg').innerHTML = '<span class="err">Overlay init failed</span>'; }
+        };
+      };
+
+      // Bookmarklet code using current origin; honors Auto-open and Position
+      function buildBookmarklet(autoOpen, position){
+        const T = origin; // tunnel or local origin
+        const pos = String(position||'bottom-right');
+        const init = ",(window.JenniEdge||{init:function(){}}).init({tenant:'demo',zip:prompt('ZIP','10001')||'10001',apiBase:T+'/edge',position:"+JSON.stringify(pos)+",autoOpenPanel:"+JSON.stringify(!!autoOpen)+"})";
+        const open = autoOpen ? ";function o(){try{if(window.JenniEdge&&window.JenniEdge.openPanel){window.JenniEdge.openPanel()}else{setTimeout(o,150)}}catch(e){setTimeout(o,150)}}o();" : "";
+        return "javascript:(function(){var T="+JSON.stringify(T)+";var s=document.createElement('script');s.src=T+'/edge/client.js';s.defer=true;document.head.appendChild(s);s.onload=function(){try"+init+open+"}catch(e){alert('JenniEdge init failed')}})();";
+      }
+      function refreshBookmarklet(){
+        const autoOpen = !!document.getElementById('autoOpen').checked;
+        const position = (document.getElementById('pos').value || 'bottom-right');
+        const bm = buildBookmarklet(autoOpen, position);
+        document.getElementById('bmLink').href = bm;
+        document.querySelector('#bmCode code').textContent = bm;
+        document.getElementById('copyBm').onclick = async () => {
+          try { await navigator.clipboard.writeText(bm); alert('Bookmarklet copied'); } catch {}
+        };
+      }
+      document.getElementById('autoOpen').addEventListener('change', refreshBookmarklet);
+      document.getElementById('pos').addEventListener('change', refreshBookmarklet);
+      refreshBookmarklet();
+
+      // Eligibility tester
+      const updateReq = () => {
+        const gtin = document.getElementById('gtin').value.trim();
+        const zip = (document.getElementById('zip2').value || '').replace(/[^0-9]/g,'').slice(0,5);
+        const url = origin + '/v1/availability?gtin='+encodeURIComponent(gtin)+'&zip='+encodeURIComponent(zip||'');
+        document.getElementById('reqUrl').textContent = url;
+        return url;
+      };
+      document.getElementById('gtin').oninput = updateReq;
+      document.getElementById('zip2').oninput = updateReq;
+      updateReq();
+      document.getElementById('callApi').onclick = async () => {
+        const url = updateReq();
+        const pre = document.querySelector('#result code');
+        pre.textContent = '// Fetching...';
+        try { const r = await fetch(url); const j = await r.json(); pre.textContent = JSON.stringify(j, null, 2); }
+        catch(e){ pre.textContent = 'Error: '+(e && e.message || 'failed'); }
+      };
+
+      // GTM snippet preview
+      const gtm = '<script defer src="'+client+'"><\/script>\n<script>window.JenniEdge && window.JenniEdge.init({ tenant: \"demo\", zip: \"10001\", apiBase: \"'+api+'\" })<\/script>';
+      document.querySelector('#gtm code').textContent = gtm;
+    })();
+  </script>
+</body>
+</html>

@@ -4,7 +4,7 @@ import { Connector } from "./interface.js";
 import { checkEligibility } from "../core/eligibility.js";
 import { JenniOrder } from "../core/types.js";
 import { orderQueue } from "../queue.js";
-import { shopTokens } from "../index.js";
+import { shopTokens } from "../tokens.js";
 
 const {
   SHOPIFY_API_KEY,

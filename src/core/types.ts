@@ -9,6 +9,7 @@ export interface EligibilityResult {
   eligible: boolean;
   distanceMiles?: number;
   estimatedArrival?: string; // ISO
+  minPrice?: number; // Lowest nearby price for this GTIN
 }
 
 export interface OrderLine {

@@ -1,0 +1,68 @@
+openapi: 3.0.3
+info:
+  title: JENNi Edge Demo API
+  version: 0.1.0
+servers:
+  - url: http://localhost:3100
+paths:
+  /resolve:
+    post:
+      summary: Resolve PDP eligibility and ETA
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenant: { type: string }
+                url: { type: string }
+                zip: { type: string }
+                fingerprint:
+                  type: object
+                  properties:
+                    sku: { type: string, nullable: true }
+                    gtin: { type: string, nullable: true }
+                    title: { type: string, nullable: true }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  eligible: { type: boolean }
+                  etaMinutes: { type: number, nullable: true }
+                  matching_score: { type: number }
+                  node_count: { type: integer }
+  /fingerprint:
+    post:
+      summary: Echoes parsed PDP hints
+      responses:
+        '200': { description: OK }
+  /match:
+    post:
+      summary: Catalog match score for PDP
+      responses:
+        '200': { description: OK }
+  /inventory:
+    get:
+      summary: Nearby inventory nodes for ZIP
+      parameters:
+        - name: zip
+          in: query
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+  /export:
+    post:
+      summary: Generate demo export
+      responses:
+        '200': { description: OK }
+  /test-order:
+    post:
+      summary: Place a simulated delivery order
+      responses:
+        '200': { description: OK }
+
